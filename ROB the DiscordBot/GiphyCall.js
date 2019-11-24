@@ -1,6 +1,6 @@
 
 //Giphy Call Method
-export function GifphyCall(theArguments, receivedCommand) {
+export function GiphyCall(theArguments, receivedCommand) {
     //this._search = search;
     if (theArguments.length > 0) {
         giphy.search('gifs', { "q": receivedCommand }).then((response) => {

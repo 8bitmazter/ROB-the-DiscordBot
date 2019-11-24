@@ -1,12 +1,13 @@
 const Discord = require('discord.js');
 const { prefix, token, giphyToken } = require('./config.json');
-import { GetGiphyList } from './GiphyList';
-import { GifphyCall } from './GifphyCall';
-import { AssigningRolesCommands } from './AssigningRolesCommands';
+const ytdl = require('ytdl-core');
+import { GiphyCall } from './GiphyCall.js';
+import { AssigningRolesCommands } from './AssigningRolesCommands.js';
 import { welcomeMessage } from './welcomeMessage';
-import { pingCommand } from './pingCommand';
+import { pingCommand } from './pingCommand.js';
+import { GetGiphyList } from './GiphyList.js';
 const client = new Discord.Client();
-const listOfGiphySearchPossibilities = GetGiphyList();
+const listOfGiphySearchPossibilities = new GetGiphyList();
 export var ErrorMessage = ":( Beep Boop Are you trying to call something that doesn't exist? Please check the bot commands text channel for more information";
 const startingRole = member.guild.roles.find('name', 'Deck Swabs');
 //global.servers = {};
@@ -48,13 +49,25 @@ function BotCommands(receivedCommand) {
     console.log("Arguments: " + arguments) // Yo there may be some arguments
 
     if (primaryCommand == "ping") {
-        pingCommand(arguments, receivedCommand)
+        pingCommand(arguments, receivedCommand);
     }
     else if (giphySearchList.includes(primaryCommand)) {
-        GifphyCall(arguments, receivedCommand)
+        GiphyCall(arguments, primaryCommand);
+    }
+    else if(primaryCommand == "play") {
+        execute(primaryCommand, serverQueue);
+    }
+    else if(primaryCommand == 'stop') {
+        stop(primaryCommand, serverQueue);
+    }
+    else if(primaryCommand == 'skip') {
+        skip(primaryCommand, serverQueue);
     }
     else if(primaryCommand == "kick") {
         KickAMember(arguments, receivedCommand)
+    }
+    else {
+        message.channel.send('Please enter a valid command, home slice.')
     }
 
 }
@@ -97,6 +110,93 @@ client.on('guildMemberAdd', member => {
     member.send(welcomeMessage);
 });
 
-client.login(token);
 
+//#region Music
+const queue = new Map();
+
+
+async function execute(message, serverQueue) {
+    const args = message.content.split(' ');
+    const voiceChannel = message.member.voiceChannel;
+    if(!voiceChannel) return message.channel.send("You need to be in Kafra's Cafe to play music!");
+    const permissions = voiceChannel.permissionsFor(message.client.user);
+    if(!permissions.has('CONNECT') || !permissions.has('SPEAK')) {
+        return message.channel.send('I need the permissions to join and speak in your voice channel!');
+    }
+
+    const songInfo = await ytdl.getInfo(args[1]);
+    const song = {
+        title: songInfo.title,
+        url: songInfo.video_url,
+    };
+
+    if(!serverQueue) {
+        // Creating the contract for our queue
+        const queueContract = {
+            textChannel: message.channel,
+            voiceChannel: voiceChannel,
+            connection: null,
+            songs: [],
+            volume: 5,
+            playing: true,
+        };
+    
+        // Setting the queue using our contract
+        queue.set(message.guild.id, queueContract);
+    
+        // Pushing the song to our songs array
+        queueContract.songs.push(song);
+    
+        try{
+            var connection = await voiceChannel.join();
+            queueContract.connection = connection;
+            play(message.guild, queueContract.songs[0]);
+        }
+        catch(err) {
+            console.log(err);
+            queue.delete(message.guild.id);
+        }
+    }
+    else{
+        serverQueue.songs.push(song);
+        console.log(serverQueue.songs);
+        return message.channel.send(`${song.title} has been added to the queue!`);
+    }
+}
+
+function skip(message, serverQueue) {
+    if (!message.member.voiceChannel) return message.channel.send('You have to be in a voice channel to do this!');
+    if (!serverQueue) return message.channel.send('There is no song to skip!');
+    serverQueue.connection.dispatcher.end();
+}
+
+function stop(message, serverQueue) {
+    if (!message.member.voiceChannel) return message.channel.send('You have to be in a voice channel to do this!');
+    serverQueue.songs = [];
+    serverQueue.connection.dispatcher.end();
+}
+
+function play(guild, song) {
+    const serverQueue = queue.get(guild.id);
+
+    if (!song) {
+        serverQueue.voiceChannel.leave();
+        queue.delete(guild.id);
+        return;
+    }
+
+    const dispatcher = serverQueue.connection.playStream(ytdl(song.url))
+    .on('end', () => {
+        console.log('No more music! :(');
+        serverQueue.songs.shift();
+        play(guild, serverQueue.songs[0]);
+    })
+    .on('error', error => {
+        console.error(error);
+    });
+    dispatcher.setVolumeLogarithmic(serverQueue.volume / 5);
+}
+//#endregion
+
+client.login(token);
 
