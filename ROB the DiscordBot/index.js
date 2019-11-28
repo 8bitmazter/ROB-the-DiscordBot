@@ -1,7 +1,7 @@
 const Discord = require('discord.js');
 const { prefix, token, giphyToken } = require('./config.json');
 const ytdl = require('ytdl-core');
-import { GiphyCall } from './GiphyCall.js';
+const GiphyCall = require('GiphyCall.js');
 import { AssigningRolesCommands } from './AssigningRolesCommands.js';
 import { welcomeMessage } from './welcomeMessage';
 import { pingCommand } from './pingCommand.js';
