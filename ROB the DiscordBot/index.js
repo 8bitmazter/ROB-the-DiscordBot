@@ -1,27 +1,29 @@
 const Discord = require('discord.js');
 const { prefix, token, giphyToken } = require('./config.json');
 const ytdl = require('ytdl-core');
-const GiphyCall = require('GiphyCall.js');
-import { AssigningRolesCommands } from './AssigningRolesCommands.js';
-import { welcomeMessage } from './welcomeMessage';
-import { pingCommand } from './pingCommand.js';
-import { GetGiphyList } from './GiphyList.js';
+const AnagramCommand = require('./ReceivedMessages/ReceivedArgument');
+const GiphyCall = require('./Giphy/GiphyCall.js');
+const GetGiphyList = require('./Giphy/GiphyList.js');
+const AssigningRolesCommands = require('./AssigningRolesCommands');
+const WelcomeMessage = require('./welcomeMessage');
+const pingCommand =  require('./pingCommand.js');
 const client = new Discord.Client();
 const listOfGiphySearchPossibilities = new GetGiphyList();
-export var ErrorMessage = ":( Beep Boop Are you trying to call something that doesn't exist? Please check the bot commands text channel for more information";
 const startingRole = member.guild.roles.find('name', 'Deck Swabs');
-//global.servers = {};
-//TODO: Add a command for "Send Nudes"
+// global.servers = {};
+// TODO: Fix the Giphy TokenIssue with exporting it. RUN DEBUGGER!
+// TODO: Add a command for "Send Nudes"
 
-var GphApiClient = require('giphy-js-sdk-core')
-giphy = GphApiClient(giphyToken)
+// Exports
+module.exports.ErrorMessage = ":( Beep Boop Are you trying to call something that doesn't exist? Please check the bot commands text channel for more information";
 
-//Return back to the console that the bot is working
+
+// Client is Ready
 client.once('ready', () => {
     console.log('Ready!')
 })
 
-//Bot Commands
+// Bot Commands
 client.on('message', async receivedCommand => {
     if (receivedCommand.author == client.user) // Prevents bot from responding to itself like a big dingus.
     {
@@ -37,16 +39,8 @@ client.on('message', async receivedCommand => {
 })
 
 function BotCommands(receivedCommand) {
-    let fullCommand = receivedCommand.content.substr(1) // Remove the leading exclamation mark. This code may not be needed later
-    let splitCommand = fullCommand.split(" ")  // Split the message up in to pieces for each space
-    let makeCommandLowerCase = splitCommand.content.ToLowerCase(); // Makes the message to lowercase for easier comparison.
-    let primaryCommand = makeCommandLowerCase[0] // The first word directly after the exclamation is the command
-    let arguments = makeCommandLowerCase.slice(1) // All other words are arguments/parameters/options for the command
-    let giphySearchList = listOfGiphySearchPossibilities
-
-    //Logging to the Console    
-    console.log("Command Received: " + primaryCommand)
-    console.log("Arguments: " + arguments) // Yo there may be some arguments
+    let primaryCommand = AnagramCommand(receivedCommand);
+    let giphySearchList = listOfGiphySearchPossibilities   
 
     if (primaryCommand == "ping") {
         pingCommand(arguments, receivedCommand);
@@ -72,7 +66,7 @@ function BotCommands(receivedCommand) {
 
 }
 
-//Kick Someone out    TODO: See how to pass in the member name to kick
+// Kick Someone out    TODO: See how to pass in the member name to kick
 function KickAMember(arguments, receivedCommand) {
     if(arguments.length > 0)
     {
@@ -107,7 +101,7 @@ function KickAMember(arguments, receivedCommand) {
 // DM New Users
 client.on('guildMemberAdd', member => {
     member.addRole(startingRole);
-    member.send(welcomeMessage);
+    member.send(WelcomeMessage);
 });
 
 
