@@ -1,13 +1,17 @@
 const Discord = require('discord.js');
 const { prefix, token, giphyToken } = require('./config.json');
+var GiphyApiToken = require('giphy-js-sdk-core');
+Giphy = GiphyApiToken(giphyToken);
 const ytdl = require('ytdl-core');
 const AnagramCommand = require('./ReceivedMessages/ReceivedArgument');
-const GiphyCall = require('./Giphy/GiphyCall.js');
+// const GiphyCall = require('./Giphy/GiphyCall.js');
 const GetGiphyList = require('./Giphy/GiphyList.js');
 const AssigningRolesCommands = require('./AssigningRolesCommands');
-const WelcomeMessage = require('./welcomeMessage');
+const { WelcomeMessage } = require('./welcomeMessage');
 const pingCommand =  require('./pingCommand.js');
-const client = new Discord.Client();
+const client = new Discord.Client({
+    disableEveryone: true
+});
 const listOfGiphySearchPossibilities = new GetGiphyList();
 const startingRole = member.guild.roles.find('name', 'Deck Swabs');
 // global.servers = {};
@@ -73,7 +77,7 @@ function KickAMember(arguments, receivedCommand) {
         if (receivedCommand.member.hasPermission(["KICK_MEMBERS", "BAN_MEMBERS"])) {
             let member = receivedCommand.mentions.members.first();
             member.kick().then((member) => {
-                giphy.search('gifs', { "q": "fail" })
+                GiphyApiToken.search('gifs', { "q": "fail" })
                     .then((response) => {
                         var totalResponses = response.data.length;
                         var responseIndex = Math.floor((Math.random() * 10) + 1) % totalResponses;
@@ -103,6 +107,26 @@ client.on('guildMemberAdd', member => {
     member.addRole(startingRole);
     member.send(WelcomeMessage);
 });
+
+//#region GiphyCall
+function GiphyCall(theArguments, receivedCommand) {
+    if (theArguments.length > 0) {
+        Giphy.search('gifs', { "q": receivedCommand }).then((response) => {
+            var gifResponses = response.data.length;
+            var gifIndex = Math.floor((Math.random() * 10) + 1) % gifResponses;
+            var gifFinal = response.data[gifIndex]
+
+            message.channel.send({ files: [gifFinal.image.fixed_height.url] })
+
+            setTimeout(function(){}, 300000);
+        })
+    } 
+    else {
+        message.channel.send("Beep Boop There Was An Error!");
+    }
+}
+
+//#endregion
 
 
 //#region Music
