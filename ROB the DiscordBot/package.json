@@ -1,15 +1,16 @@
 {
-  "name": "mybot",
+  "name": "RobTheDiscordBot",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "nodemon ./src/bot.js"
   },
-  "author": "",
+  "author": "Seano Robinson & John Price",
   "license": "ISC",
   "dependencies": {
-    "discord.js": "^11.5.1",
+    "discord.js": "^12.2.0",
     "giphy-js-sdk-core": "^1.0.6",
     "opusscript": "0.0.7",
     "ytdl-core": "^0.29.7"

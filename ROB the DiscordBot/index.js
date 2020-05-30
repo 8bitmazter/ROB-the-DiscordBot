@@ -1,25 +1,13 @@
-const Discord = require('discord.js');
-const { prefix, token, giphyToken } = require('./config.json');
-var GiphyApiToken = require('giphy-js-sdk-core');
-Giphy = GiphyApiToken(giphyToken);
-const ytdl = require('ytdl-core');
-const AnagramCommand = require('./ReceivedMessages/ReceivedArgument');
-// const GiphyCall = require('./Giphy/GiphyCall.js');
-const GetGiphyList = require('./Giphy/GiphyList.js');
-const AssigningRolesCommands = require('./AssigningRolesCommands');
-const { WelcomeMessage } = require('./welcomeMessage');
-const pingCommand =  require('./pingCommand.js');
-const client = new Discord.Client({
-    disableEveryone: true
+const { Client, MessageEmbed } = require('discord.js');
+const {  token } = require('./config.json');
+const client = new Client({
+    disableEveryone: true,
+    partials: ['MESSAGE'] // Cache's message
 });
-const listOfGiphySearchPossibilities = new GetGiphyList();
-const startingRole = member.guild.roles.find('name', 'Deck Swabs');
-// global.servers = {};
-// TODO: Fix the Giphy TokenIssue with exporting it. RUN DEBUGGER!
-// TODO: Add a command for "Send Nudes"
+client.login(token);
+// const startingRole = guild.roles.cache.find(role => role.name === 'Deck Swabs'); 
+//member.guild.roles.find('name', 'Deck Swabs');
 
-// Exports
-module.exports.ErrorMessage = ":( Beep Boop Are you trying to call something that doesn't exist? Please check the bot commands text channel for more information";
 
 
 // Client is Ready
@@ -27,194 +15,120 @@ client.once('ready', () => {
     console.log('Ready!')
 })
 
-// Bot Commands
-client.on('message', async receivedCommand => {
-    if (receivedCommand.author == client.user) // Prevents bot from responding to itself like a big dingus.
+client.on('message', message => {
+    if(message.content === 'doit')
     {
-        return
+        message.channel.send({ embed: welcomeMessage });
     }
-    if (receivedCommand.channel.type == "dm" && receivedCommand.member.equals(startingRole)) {
-        AssigningRolesCommands(receivedCommand)
+});
 
-    }
-    if (receivedCommand.content.startsWith(prefix)) {
-        BotCommands(receivedCommand);
-    }
-})
+/*client.on('messageReactionAdd', async (reaction, user) => {
+    console.log(reaction.emoji.name);
 
-function BotCommands(receivedCommand) {
-    let primaryCommand = AnagramCommand(receivedCommand);
-    let giphySearchList = listOfGiphySearchPossibilities   
+    let applyRole = async () => {
 
-    if (primaryCommand == "ping") {
-        pingCommand(arguments, receivedCommand);
-    }
-    else if (giphySearchList.includes(primaryCommand)) {
-        GiphyCall(arguments, primaryCommand);
-    }
-    else if(primaryCommand == "play") {
-        execute(primaryCommand, serverQueue);
-    }
-    else if(primaryCommand == 'stop') {
-        stop(primaryCommand, serverQueue);
-    }
-    else if(primaryCommand == 'skip') {
-        skip(primaryCommand, serverQueue);
-    }
-    else if(primaryCommand == "kick") {
-        KickAMember(arguments, receivedCommand)
-    }
-    else {
-        message.channel.send('Please enter a valid command, home slice.')
-    }
-
-}
-
-// Kick Someone out    TODO: See how to pass in the member name to kick
-function KickAMember(arguments, receivedCommand) {
-    if(arguments.length > 0)
-    {
-        if (receivedCommand.member.hasPermission(["KICK_MEMBERS", "BAN_MEMBERS"])) {
-            let member = receivedCommand.mentions.members.first();
-            member.kick().then((member) => {
-                GiphyApiToken.search('gifs', { "q": "fail" })
-                    .then((response) => {
-                        var totalResponses = response.data.length;
-                        var responseIndex = Math.floor((Math.random() * 10) + 1) % totalResponses;
-                        var responseFinal = response.data[responseIndex];
-                        receivedCommand.channel.send(member.displayName + " has walked the plank!", {
-                            files: [responseFinal.images.fixed_height.url]
-                        });
-                    }).catch(() => {
-                        receivedCommand.channel.send("Well this is awkward...");
-                    });
-            });
+        let emojiName = reaction.emoji.name;
+        let role = reaction.message.guild.roles.find(role => role.name.toLowerCase() === emojiName.toLowerCase());
+        let member = reaction.message.guild.members.find(member => member.id === user.id);
+        try {
+            if(role && member)
+            {
+                console.log("Role and member found.");
+                await member.roles.add(role);
+                console.log("Done.");
+                await member.roles.remove(startingRole)
+            }
         }
-        else
+        catch(err)
         {
-            message.channel.send(receivedCommand.author.displayName + " you do not have this permission. Please reach out to the Captain or First Mate to perform this action.")
+           console.log(err);
         }
+
+    }
+    if(reaction.message.partial)
+    {
+        try {
+            let msg = await reaction.message.fetch();
+            if(msg.id === )
+            console.log("Cached")
+            applyRole();
+        }
+        catch (err)
+        {
+            console.log(err);
+        }
+
     }
     else
     {
-        message.channel.send(ErrorMessage)
-    }
-
-}
-
-// DM New Users
-client.on('guildMemberAdd', member => {
-    member.addRole(startingRole);
-    member.send(WelcomeMessage);
-});
-
-//#region GiphyCall
-function GiphyCall(theArguments, receivedCommand) {
-    if (theArguments.length > 0) {
-        Giphy.search('gifs', { "q": receivedCommand }).then((response) => {
-            var gifResponses = response.data.length;
-            var gifIndex = Math.floor((Math.random() * 10) + 1) % gifResponses;
-            var gifFinal = response.data[gifIndex]
-
-            message.channel.send({ files: [gifFinal.image.fixed_height.url] })
-
-            setTimeout(function(){}, 300000);
-        })
-    } 
-    else {
-        message.channel.send("Beep Boop There Was An Error!");
-    }
-}
-
-//#endregion
-
-
-//#region Music
-const queue = new Map();
-
-
-async function execute(message, serverQueue) {
-    const args = message.content.split(' ');
-    const voiceChannel = message.member.voiceChannel;
-    if(!voiceChannel) return message.channel.send("You need to be in Kafra's Cafe to play music!");
-    const permissions = voiceChannel.permissionsFor(message.client.user);
-    if(!permissions.has('CONNECT') || !permissions.has('SPEAK')) {
-        return message.channel.send('I need the permissions to join and speak in your voice channel!');
-    }
-
-    const songInfo = await ytdl.getInfo(args[1]);
-    const song = {
-        title: songInfo.title,
-        url: songInfo.video_url,
-    };
-
-    if(!serverQueue) {
-        // Creating the contract for our queue
-        const queueContract = {
-            textChannel: message.channel,
-            voiceChannel: voiceChannel,
-            connection: null,
-            songs: [],
-            volume: 5,
-            playing: true,
-        };
-    
-        // Setting the queue using our contract
-        queue.set(message.guild.id, queueContract);
-    
-        // Pushing the song to our songs array
-        queueContract.songs.push(song);
-    
-        try{
-            var connection = await voiceChannel.join();
-            queueContract.connection = connection;
-            play(message.guild, queueContract.songs[0]);
-        }
-        catch(err) {
-            console.log(err);
-            queue.delete(message.guild.id);
+        console.log("Not a partial.")
+        if(reaction.message.id === )
+        {
+            console.log(true);
+            applyRole();
         }
     }
-    else{
-        serverQueue.songs.push(song);
-        console.log(serverQueue.songs);
-        return message.channel.send(`${song.title} has been added to the queue!`);
-    }
-}
+})*/
 
-function skip(message, serverQueue) {
-    if (!message.member.voiceChannel) return message.channel.send('You have to be in a voice channel to do this!');
-    if (!serverQueue) return message.channel.send('There is no song to skip!');
-    serverQueue.connection.dispatcher.end();
-}
-
-function stop(message, serverQueue) {
-    if (!message.member.voiceChannel) return message.channel.send('You have to be in a voice channel to do this!');
-    serverQueue.songs = [];
-    serverQueue.connection.dispatcher.end();
-}
-
-function play(guild, song) {
-    const serverQueue = queue.get(guild.id);
-
-    if (!song) {
-        serverQueue.voiceChannel.leave();
-        queue.delete(guild.id);
-        return;
-    }
-
-    const dispatcher = serverQueue.connection.playStream(ytdl(song.url))
-    .on('end', () => {
-        console.log('No more music! :(');
-        serverQueue.songs.shift();
-        play(guild, serverQueue.songs[0]);
-    })
-    .on('error', error => {
-        console.error(error);
-    });
-    dispatcher.setVolumeLogarithmic(serverQueue.volume / 5);
-}
-//#endregion
-
-client.login(token);
-
+const welcomeMessage = {
+    color: ("#0099ff"),
+    title: "Welcome to Misfit Heroes Games!",
+    description: "A server made for all sorts of gamers alike. Retro-Gamers, Game Developers, Twitch Streamers, Rocket League Players, Monster Hunter Hunters, Valorant Players, League of Legends Champions, & Home of the WorldEaters guild of Ragnarok Mobile.\n\n If you are new to Discord and in need of a tutorial, we got you. [Just click here!](https://www.youtube.com/watch?v=zZ08Fbs5LpM)",
+    fields: [
+        {
+            name: "\u200b",
+            value: "Please abide by these simple set of rules!\n",
+            inline: true
+        },
+        {
+            name: "Rule 1.",
+            value: "Don't be Mean. You're more than welcome to express your views & you have the right to have your own beliefs but I ask you do not ridicule someone elses. I.E. Don't be mean.",
+            inline: false
+        },
+        {
+            name: "\u200b",
+            value: "\u200b",
+            inline: false
+        },
+        {
+            name: "Rule 2.",
+            value: "Please be attentive to the Captain's Wishes section. The Captain & First Mates will post announcements and updates to this channel. This will also lead to less usage of the @everyone command. So please do not mute the captains-wishes text channel",
+            inline: false
+        },
+        {
+            name: "\u200b",
+            value: "\u200b",
+            inline: false
+        },
+        {
+            name: "Rule 3.",
+            value: "Certain text channels (Mainly cave-paintings-nsfw) have specific guidelines to them that I ask you please to follow. You may find them in the pinned message section within that text channel. Please check pinned messages before posting.",
+            inline: false
+        },
+        {
+            name: "\u200b",
+            value: "\u200b",
+            inline: false
+        },
+        {
+            name: "Rule 4",
+            value: "I do ASK (Which means it is NOT required) that you do leave the @everyone command on in this channel. The Captain & First Mates will not use this command unless it is completely necessary. Or if it is specifically for a major update to the server. This is why the Captains Wishes channel exists (to limit the use of the @everyone command)",
+            inline: false
+        },
+        {
+            name: "TLDR:",
+            value: "Don't be Mean, Updates are in Captain's Orders Text Channel, Read Pinned Messages for more specific Rules, I prefer you leave @everyone notification on. I may use it once every 6 months.",
+            inline: true
+        },
+        {
+            name: "\u200b",
+            value: "The Most Important Thing to Remember is:\n\n This is the Internet. Nothing is Sacred.\n\n If you have any other questions or concerns please do not hesitate to reach out to the Captain or a First Mate for assistance!",
+            inline: false
+        },
+        {
+            name: "\u200b",
+            value: "If you are here for the WorldEaters Guild & you agree to these rules please respond with: !zenyplease\n\n If you are here for everything else & you agree to these rules please respond with: !agree\n\n By doing one of the responses will assign you a specific role within the Discord server & avoid getting pruned."
+        },
+    ],
+    timestamp: new Date(),
+};
