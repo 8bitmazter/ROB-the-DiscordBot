@@ -2,18 +2,19 @@ const { Client, MessageEmbed } = require('discord.js');
 const {  token } = require('./config.json');
 const client = new Client({
     disableEveryone: true,
-    partials: ['MESSAGE'] // Cache's message
+    partials: ['MESSAGE', 'CHANNEL', 'REACTION'] // Cache's message
 });
 client.login(token);
-// const startingRole = guild.roles.cache.find(role => role.name === 'Deck Swabs'); 
-//member.guild.roles.find('name', 'Deck Swabs');
 
-
+// TODO: Add generic role to new members
+// TODO: Test to make sure it adds the Role
+// TODO: Fix the if message so it doesn't try to add a role to each time they message.
+// TODO: Update the MessageID's with the new DiscordEmbed.
 
 // Client is Ready
 client.once('ready', () => {
     console.log('Ready!')
-})
+});
 
 client.on('message', message => {
     if(message.content === 'doit')
@@ -22,36 +23,43 @@ client.on('message', message => {
     }
 });
 
-/*client.on('messageReactionAdd', async (reaction, user) => {
-    console.log(reaction.emoji.name);
-
-    let applyRole = async () => {
-
-        let emojiName = reaction.emoji.name;
-        let role = reaction.message.guild.roles.find(role => role.name.toLowerCase() === emojiName.toLowerCase());
-        let member = reaction.message.guild.members.find(member => member.id === user.id);
-        try {
-            if(role && member)
-            {
-                console.log("Role and member found.");
-                await member.roles.add(role);
-                console.log("Done.");
-                await member.roles.remove(startingRole)
-            }
-        }
-        catch(err)
-        {
-           console.log(err);
-        }
-
-    }
-    if(reaction.message.partial)
+client.on('message', message => {
+    if(message.content === '!test')
     {
+        message.react('a:no1:721508915996655757')
+    }
+});
+client.on('messageReactionAdd', async (reaction, user) => {
+    // if(reaction.message.guild.id !== '716113531677966467') return; // This is for so it doesn't just apply the role each time a reaction is made. 
+    if(reaction.message.channel.id === '617938783035457577')
+    {
+        console.log(reaction.emoji.name);
         try {
             let msg = await reaction.message.fetch();
-            if(msg.id === )
-            console.log("Cached")
-            applyRole();
+            if(msg.id === '716113531677966467')
+            {
+                console.log("Cached")
+                try {
+                    if(reaction.emoji.id === '721508915996655757') // RO Emoji
+                    {
+                        console.log("Role and member found.");
+                        await reaction.message.guild.members.cache.get(user.id).roles.add('482425268426768385');
+                        console.log("Done.");
+                        await reaction.message.guild.members.cache.get(user.id).roles.remove('630197242548060173');
+                    }
+                    if(reaction.emoji.id === '496414403793649715') // Booger Emoji
+                    {
+                        console.log("Role and member found.");
+                        await reaction.message.guild.members.cache.get(user.id).roles.add('538194651958476831');
+                        console.log("Done.");
+                        await reaction.message.guild.members.cache.get(user.id).roles.remove('630197242548060173')
+                    }
+                }
+                catch(err)
+                {
+                   console.log(err);
+                }
+            }
         }
         catch (err)
         {
@@ -62,13 +70,12 @@ client.on('message', message => {
     else
     {
         console.log("Not a partial.")
-        if(reaction.message.id === )
+        if(reaction.message.id === '716113531677966467')
         {
             console.log(true);
-            applyRole();
         }
     }
-})*/
+})
 
 const welcomeMessage = {
     color: ("#0099ff"),
@@ -127,7 +134,7 @@ const welcomeMessage = {
         },
         {
             name: "\u200b",
-            value: "If you are here for the WorldEaters Guild & you agree to these rules please respond with: !zenyplease\n\n If you are here for everything else & you agree to these rules please respond with: !agree\n\n By doing one of the responses will assign you a specific role within the Discord server & avoid getting pruned."
+            value: "If you are here for the WorldEaters Guild & you agree to these rules please respond with: <:no1:721508915996655757> \n\n If you are here for everything else & you agree to these rules please respond with: <:Booger:496414403793649715> \n\n By doing one of the responses will assign you a specific role within the Discord server & avoid getting pruned."
         },
     ],
     timestamp: new Date(),
